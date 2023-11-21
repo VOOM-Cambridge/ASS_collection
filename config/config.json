@@ -1,0 +1,30 @@
+{
+    "data_needed": {
+        "energy use":{
+            "frequency": "per product",
+            "units": "kWh",
+            "method": "signal",
+            "source": "sensors" 
+        },
+        "material use": {
+            "frequency": "per product",
+            "units": "kg",
+            "source": "MES"
+        },
+        "material waste": {
+            "frequency": "per product",
+            "units": "kg",
+            "source": "sensors"
+        },
+        "material waste": {
+            "frequency": "per product",
+            "units": "kg",
+            "source": "sensors"
+        },
+        "order time taken": {
+            "frequency": "per order",
+            "units": "kg",
+            "method": "tracking"
+        }
+    }
+}
