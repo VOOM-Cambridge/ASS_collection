@@ -1,25 +1,26 @@
 [influx_info]
-url = "http://129.169.48.174:8086"
-org = "VOOM_MANUAL"
-token =  "l3Z9k31lKzZ-Ixupk_s3FjinRas-HHbvf7tsBTpEUCP7m5YQL0Z0jF1yjQEC_ZNYLEr6xkSZfuXMUP_spHe9cg==" 
+url = "http://129.169.48.176:8086"
+org = "Robot_Lab"
+token =  "robot-lab-2023" 
 bucket = "fault_monitoring" 
 frequency_record_seconds = 1
 
 [frepple_info]
-URL = "http://129.169.48.174:9000"
+URL = "http://129.169.48.176:9000"
 password = "admin"
 user ="admin"
 
 
 [Factory]
-name = "Manual Assembly" #"3D Printing or Robot Lab"
-machine = [["Screwdriver"]]
+name = "Manual Assembly" #"3D Printing"
+machine = ["Robot_Cell_3_LRM", "Robot_Cell_3_M6", "Robot_track"]
 frequencyUpdate = 1
 fileType = ["AAS", "csv"]
-first_check = 300 #hours
-address = "Manual Assembly, Robot Lab back, Insitute for manufacturing, Cambridge, UK"
+first_check = 6500 #hours
+address = "Robot Lab, Insitute for manufacturing, Cambridge, UK"
 email = "sjb351@cam.ac.uk"
-process = ["manual assembly"]
+process = ["robotic assembly"]
+
 
 [energy_use]
 name = "energy use"
@@ -45,9 +46,9 @@ method= "MES" # data collected using signal peaks (signals) or tracking system (
 name = "order time taken"
 frequency= "per order" # per product, per order, per second
 method= "tracking" # data collected using signal peaks (signals) or tracking system (tracking), MES or <sensor>-MES combination
-machine = [""]
-start_location = "Location 2"
-end_location = "Location 3"
+machine = ["Robot_Cell_3_LRM", "Robot_Cell_3_M6", "Robot_track"]
+start_location = "Job Start"
+end_location = "Job End"
 # [assembly_method]
 # name = "assembly method"
 # frequency= "per order" # per product, per order, per second

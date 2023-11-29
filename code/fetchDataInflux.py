@@ -266,60 +266,133 @@ class fetchData(influxUploadData):
         # take value from integration and divide by the number of seconds past 
         return timingsAssem, diffArray
     
-    def jobLengthTime(self, barcode, numberDaysBack):
+    def jobLengthTime(self, barcode, numberDaysBack, locationStart, locationEnd):
         query_api = self.influx_client.query_api()
+        if barcode == None:
+            return "unkown", "unkown"
+        
         query = 'from(bucket: "tracking_data")\
-                |> range(start: -' + str(numberDaysBack) + 'd)\
+                |> range(start: -' + str(numberDaysBack) + ')\
                 |> filter(fn: (r) => r["_measurement"] == "tracking")\
                 |> filter(fn: (r) => r["_value"] == "'+barcode+'")\
-                |> filter(fn: (r) => r["location"] == "Job End")'
+                |> filter(fn: (r) => r["location"] == "'+locationEnd+'")'
         table = query_api.query(query)
         output = table.to_values(columns=['_time'])
         if len(output) == 1:
             timeEnd = output[0]
         elif len(output) > 1:
-            timeEnd = output
+            finalTimes =[]
+            # check the barcode wasn't scnaned twice by accident, if so keep the first scan
+            for i in range(1, len(output)):
+                if (output[i][0] - output[i-1][0]).total_seconds() > 30:
+                    finalTimes.append(output[i-1])
+                    if i == len(output)-1:
+                        finalTimes.append(output[i])
+            timeEnd = finalTimes
         else:
             timeEnd = "unkown"
 
         query_api = self.influx_client.query_api()
         query = 'from(bucket: "tracking_data")\
-                |> range(start: -' + str(numberDaysBack) + 'd)\
+                |> range(start: -' + str(numberDaysBack) + ')\
                 |> filter(fn: (r) => r["_measurement"] == "tracking")\
                 |> filter(fn: (r) => r["_value"] == "'+barcode+'")\
-                |> filter(fn: (r) => r["location"] == "Job Start")'
+                |> filter(fn: (r) => r["location"] == "'+locationStart+'")'
         table = query_api.query(query)
         output = table.to_values(columns=['_time'])
         if len(output) == 1:
             timeStart = output[0]
         elif len(output) > 1:
-            timeStart = output
+            finalTimes =[]
+            # check the barcode wasn't scnaned twice by accident, if so keep the first scan
+            for i in range(1, len(output)):
+                if (output[i][0] - output[i-1][0]).total_seconds() > 30:
+                    
+                    finalTimes.append(output[i-1])
+                    if i == len(output)-1:
+                        finalTimes.append(output[i])
+            timeStart = finalTimes
         else:
             timeStart = "unkown"
 
+        # compare readings if any to see if start and end scan were close showing test was too fast
+        # limit set to 5 seconds
+        iE =[]
+        iS =[]
+        
+        if timeStart != "unkown" and timeEnd != "unkown":
+            for indS in timeStart:
+                for indE in timeEnd:
+                    try:
+                        if (indE[0] - indS[0]).total_seconds() < 5:
+                            iE.append(indE)
+                            iS.append(indS)
+                    except:
+                        if (type(indE)==list and type(indS)!=list):
+                            indE = indE[0]
+                        elif(type(indS)==list and type(indE)!=list):
+                            indS = indS[0]
+
+                        if (indE - indS).total_seconds() < 5:
+                            iE.append(indE)
+                            iS.append(indS)
+                            
+            for i in iE:
+                try:
+                    timeEnd.remove(i[0])
+                except: 
+                    True
+            for i in iE:
+                try:
+                    timeStart.remove(i[0])
+                except: 
+                    True
+
+        if type(timeEnd) ==list or type(timeStart) == list:
+            if len(timeEnd) != len(timeStart):
+                print("error data not the same length")
+                timeStart = "unkown"
+                timeEnd = "unkown"
+        if (timeStart == "unkown" and timeEnd != "unkown") or (timeStart != "unkown" and timeEnd == "unkown"):
+            timeEnd = "unkown"
+            timeStart = "unkown"
         return timeStart, timeEnd
     
-    def jobLengthEnergyWithTracking(self, barcodes, machine, timesBack):
+    def jobLengthEnergyWithTracking(self, machine, timesBack, locationS, locationE):
         data =[]
         # data contians [ startTime endTime duration jobFile complete, energyUse, machine]
         # find all the barcode numbers
-        if barcodes==[] or barcodes ==None:
-            query_api = self.influx_client.query_api()
-            query = 'from(bucket: "tracking_data")\
+        query_api = self.influx_client.query_api()
+        query = 'from(bucket: "tracking_data")\
                         |> range(start: -' + timesBack + ')\
                         |> filter(fn: (r) => r["_measurement"] == "tracking")\
                         |> filter(fn: (r) => r["_field"] == "id")\
                         |> unique()'
-            table = query_api.query(query)    
-            barcodes = table.to_values(columns=['_value'])
+        table = query_api.query(query)    
+        barcodes = table.to_values(columns=['_value'])
 
         # for each barcode found find the job length times if they exist
         for barcode in barcodes:
-            startTime, endTime = self.jobLengthTime(self, barcode[0], timesBack)
-            datPart = self.fillData(startTime, endTime, machine, False, barcode)
-            data.append(datPart)
+            startTime, endTime = self.jobLengthTime(barcode[0], timesBack, locationS, locationE)
+            
+            if startTime != "unkown" or endTime != "unkown" or len(startTime) != len(endTime):
+                startTime = self.makeList(startTime)
+                endTime = self.makeList(endTime)
+                for i in range(len(startTime)):
+                    try:
+                        datPart = self.fillData(startTime[i][0], endTime[i][0], machine, False, barcode)
+                    except:
+                        datPart = self.fillData(startTime[i], endTime[i], machine, False, barcode)
+                    data.append(datPart)
         return data
     
+    def makeList(self, valueIn):
+        if type(valueIn) != list and len(valueIn) ==1:
+            return [valueIn]
+        else:
+            return valueIn
+        
+
     def jobLengthEnergyWithSignal(self, machine, timesBack):
         data =[]
         # data contians [ startTime endTime duration jobFile complete, energyUse, machine]
@@ -361,7 +434,7 @@ class fetchData(influxUploadData):
         datPart[0] = startTime
         datPart[1] = endTime
         datPart[2] = (datPart[1] - datPart[0]).total_seconds()
-        machineStr =""
+        machineStr = ""
         energy =0
         if type(machines) != list:
             machines = [machines]
@@ -372,7 +445,7 @@ class fetchData(influxUploadData):
                 datPart[3] = self.findFileJobName(datPart[0], datPart[1], machine)
                 datPart[4] = self.checkComplete(datPart[0], datPart[1], machine)
             else:
-                datPart[3] = barcode
+                datPart[3] = barcode[0]
                 machineStr = ""
         datPart[5] = energy
         datPart[6] = machineStr
@@ -428,7 +501,6 @@ class fetchData(influxUploadData):
         else:
             return ""
             
-
     def jobLengthAndTimeFile(self, machines, numberDaysBack):
         data = []
         for machine in machines:
@@ -482,7 +554,6 @@ class fetchData(influxUploadData):
                 data.append(fileData)
 
         return data
-
 
     def findTimeInUse(self, machine, numberDaysBack):
         query_api = self.influx_client.query_api()

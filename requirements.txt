@@ -14,4 +14,3 @@ evdev
 asyncio
 tomli
 pytz
-base64

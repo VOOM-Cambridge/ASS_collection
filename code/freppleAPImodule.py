@@ -352,14 +352,19 @@ class freppleConnect:
         return output
     
     def findAllPartsMaterials(self, item):
-        data = data[0]
-        print(data["name"])
-        opp = self.operationMaterials("GETALL", {"operation": data["name"]})
-        info = []
-        for opperation in opp:
-            info.append([opperation["item"], opperation["quantity"]])
-        
-        return info
+        data = self.operation("GETALL", {"item": item})
+        if data != [] or data != None:
+            data = data[0]
+            opp = self.operationMaterials("GETALL", {"operation": data["name"]})
+            info = []
+            for opperation in opp:
+                quantity = float(opperation["quantity"])
+                if quantity < 0: # material goes into product
+                    info.append([opperation["item"], quantity])
+            
+            return info
+        else:
+            return None
         
 
 
