@@ -14,3 +14,5 @@ evdev
 asyncio
 tomli
 pytz
+scipy
+requests
