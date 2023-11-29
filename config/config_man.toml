@@ -1,15 +1,13 @@
 [influx_info]
-url = "http://129.169.48.174:8086"
+url = "timeseries-db.docker.local:8086"
 org = "VOOM_MANUAL"
 token =  "l3Z9k31lKzZ-Ixupk_s3FjinRas-HHbvf7tsBTpEUCP7m5YQL0Z0jF1yjQEC_ZNYLEr6xkSZfuXMUP_spHe9cg==" 
-bucket = "fault_monitoring" 
 frequency_record_seconds = 1
 
 [frepple_info]
-URL = "http://129.169.48.174:9000"
+URL = "http://frepple-3d:80"
 password = "admin"
 user ="admin"
-
 
 [Factory]
 name = "Manual Assembly" #"3D Printing or Robot Lab"
